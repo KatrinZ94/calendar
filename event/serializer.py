@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, time
 
 from rest_framework import serializers
 
@@ -14,7 +14,7 @@ class UserEventSerializer(serializers.ModelSerializer):
         end_date = validated_data.get('end_date')
         if end_date is None:
             start_date = validated_data.get('start_date')
-            validated_data['end_date'] = datetime.combine(start_date, datetime.time.max)
+            validated_data['end_date'] = datetime.combine(start_date, time.max)
         return super().create(validated_data)
 
 
