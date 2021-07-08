@@ -39,3 +39,12 @@ class UserEvent(models.Model):
         help_text='выберите время напоминания',
         choices=choices_of_time_reminder
     )
+
+
+class GarmentEvent:
+    def __init__(self, name, _begin, _end_time):
+        self.name = name
+        self.start_date = _begin
+        self.end_date = _end_time
+
+
