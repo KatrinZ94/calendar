@@ -2,6 +2,12 @@ from django.contrib.auth.models import User
 from django.db import models
 
 
+class Country(models.Model):
+    name = models.CharField(
+        max_length=124,
+        verbose_name='страна'
+    )
+
 class UserEvent(models.Model):
     user = models.ForeignKey(
         User,
@@ -41,10 +47,24 @@ class UserEvent(models.Model):
     )
 
 
-class GarmentEvent:
-    def __init__(self, name, _begin, _end_time):
-        self.name = name
-        self.start_date = _begin
-        self.end_date = _end_time
+class PublicHoliday(models.Model):
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+    name = models.CharField(
+        max_length=300,
+        verbose_name='название государственного праздника',
+    )
+    start_date = models.DateTimeField(
+        db_index=True,
+        verbose_name='начало праздника',
+    )
+    end_date = models.DateTimeField(
+        null=False,
+        blank=True,
+        verbose_name='окончание праздника',
+    )
+    # def __init__(self, name, _begin, _end_time):
+    #     self.name = name
+    #     self.start_date = _begin
+    #     self.end_date = _end_time
 
 

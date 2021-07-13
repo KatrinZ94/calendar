@@ -1,9 +1,7 @@
 from ics import Calendar, Event
 from datetime import datetime, time
-
 from rest_framework import serializers
-
-from event.models import UserEvent, GarmentEvent
+from event.models import UserEvent, PublicHoliday
 
 
 class UserEventSerializer(serializers.ModelSerializer):
@@ -23,3 +21,10 @@ class GetEventsFromICSSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=124)
     start_date = serializers.DateTimeField()
     end_date = serializers.DateTimeField()
+
+
+class SortedEventsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserEvent
+        fields = '__all__'
+
