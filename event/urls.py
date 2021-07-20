@@ -7,5 +7,4 @@ urlpatterns = [
     path("pars_event/", views.GetEventsFromICS.as_view(), name="pars_event"),
     path("get_user_event/<int:user_id>/<int:month>/<int:year>", views.SortedEventsByMonthAPIView.as_view(), name="get_user_event"),
 
-
 ]

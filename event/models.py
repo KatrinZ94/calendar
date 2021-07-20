@@ -8,6 +8,7 @@ class Country(models.Model):
         verbose_name='страна'
     )
 
+
 class UserEvent(models.Model):
     user = models.ForeignKey(
         User,

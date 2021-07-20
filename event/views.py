@@ -1,11 +1,7 @@
-#from django.contrib.sites import requests
-from django.shortcuts import render
-# Create your views here.
-#from pip._vendor import requests
-from ics import Calendar
-from rest_framework import status
+from rest_framework import status, filters, pagination
 
-from rest_framework.generics import ListCreateAPIView, ListAPIView, CreateAPIView
+from rest_framework.generics import ListCreateAPIView, ListAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from ics import Calendar
@@ -15,21 +11,30 @@ from event.models import UserEvent, PublicHoliday, Country
 from event.serializer import UserEventSerializer, GetEventsFromICSSerializer, SortedEventsSerializer
 
 
-class UserEventListCreateAPIView(ListCreateAPIView):
+class PaginatorAllEvents(pagination.LimitOffsetPagination):
+    max_limit = 5
+
+
+class UserEventListCreateAPIView(CreateAPIView):
     '''Создание пользовательского события'''
+    permission_classes = [IsAuthenticated]
     queryset = UserEvent.objects.all()
     serializer_class = UserEventSerializer
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    search_fields = ('name',)
+    ordering_fields = ['start_date', ]
+    pagination_class = PaginatorAllEvents
+
+
+class UserEventEditingAPIView(RetrieveUpdateDestroyAPIView):
+    """Редактирование пользовательского события"""
+    queryset = UserEvent.objects.get
+    serializer_class = UserEventSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class GetEventsFromICS(APIView):
     """Извлечение государственных праздников из файла формата ics и сохранение в базу"""
-    # serializer_class = GetEventsFromICSSerializer
-    # url = "https://www.officeholidays.com/ics/ics_country.php?tbl_country=russia"
-    # c = Calendar(requests.get(url).text)
-    # gov_arr = []
-    # for gav_event in c.events:
-    #     gov_arr.append(PublicHoliday(gav_event.name, gav_event._begin, gav_event._end_time))
-    # queryset = gov_arr
 
     def post(self, request, *args, **kwargs):
         country_from_request = request.META.get('HTTP_COUNTRY_NAME')
@@ -50,6 +55,8 @@ class GetEventsFromICS(APIView):
 
 class SortedEventsByMonthAPIView(APIView):
     """вывод всех событий определенного пользователя за заданный месяц года"""
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, user_id, month, year):
         start_date = datetime(year, month, 1)
         end_date = datetime(year, month + 1, 1)
