@@ -147,6 +147,9 @@ EMAIL_HOST_USER = 'forallneedz@gmail.com'
 EMAIL_HOST_PASSWORD = 'arccos90'
 EMAIL_PORT = 587
 
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+
 DJOSER = {
     'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',

@@ -1,8 +1,11 @@
 from djoser import signals
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+
 from authentication.models import UserProfile
 from djoser.conf import settings
+
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,7 +19,12 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'username', 'password', 'profile')
-        extra_kwargs = {'email': {'required': True, 'allow_blank': False}}
+        unique_together = ('email',)
+        extra_kwargs = {'email': {'required': True, 'allow_blank': False, 'validators': [
+                        UniqueValidator(
+                            queryset=User.objects.all()
+                        )
+                    ]}}
 
     def create(self, validated_data):
         profile = validated_data.pop('profile')

@@ -17,14 +17,19 @@ class UserEventSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class EventsOfDaySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = UserEvent
+        fields = ('name', 'start_date')
+
+
+class EveryDayEventsOfMonthSerializer(serializers.Serializer):
+        date = serializers.DateField()
+        events = EventsOfDaySerializer(many=True)
+
+
 class GetEventsFromICSSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=124)
     start_date = serializers.DateTimeField()
     end_date = serializers.DateTimeField()
-
-
-class SortedEventsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserEvent
-        fields = '__all__'
-
