@@ -9,7 +9,8 @@ import calendar
 import requests
 from datetime import datetime, timedelta
 from event.models import UserEvent, PublicHoliday, Country
-from event.serializer import UserEventSerializer, EventsOfDaySerializer, EveryDayEventsOfMonthSerializer
+from event.serializer import UserEventSerializer, EventsOfDaySerializer, EveryDayEventsOfMonthSerializer, \
+    PublicHolidaySerializer
 
 
 class PaginatorAllEvents(pagination.LimitOffsetPagination):
@@ -42,8 +43,12 @@ class UserEventEditingAPIView(RetrieveUpdateDestroyAPIView):
 class AllUserEventAPIView(ListAPIView):
     """Все пользовательские события"""
     permission_classes = [IsAuthenticated]
-    queryset = UserEvent.objects.all()
     serializer_class = UserEventSerializer
+
+    def get_queryset(self):
+        queryset = UserEvent.objects.filter(user_id=self.request.user.id)
+        return queryset
+
 
 class EventsOfDay(APIView):
     """Вывод всех событий пользователя за определенный день"""
@@ -100,3 +105,13 @@ class GetEventsFromICS(APIView):
             publish_event.end_date = event._end_time.datetime
             publish_event.save()
         return Response(status=status.HTTP_201_CREATED)
+
+
+class PublicHolidayAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, month, year):
+        country_id = request.user.profile.country_id
+        events_of_month = PublicHoliday.objects.filter(country_id=country_id, start_date__year=year, start_date__month=month)
+        serializer = PublicHolidaySerializer(events_of_month, many=True)
+        return Response(serializer.data)
