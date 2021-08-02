@@ -10,6 +10,7 @@ from django.utils.timezone import make_aware
 
 from authentication.models import UserProfile
 from event.models import UserEvent, Country, PublicHoliday
+from event.service import send
 
 
 def get_api_client(user):
@@ -318,3 +319,13 @@ class TestAuthenticationForEventsMethods(APITestCase):
         response = client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+
+class SendEmail(APITestCase):
+
+
+    def test_send_email(self):
+        #send('katrin.z.94@mail.ru')
+        url = reverse('send_email')
+        client = APIClient()
+        response = client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

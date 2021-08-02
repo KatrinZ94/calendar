@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from rest_framework import status, filters, pagination
 
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView, get_object_or_404
@@ -11,6 +12,7 @@ from datetime import datetime, timedelta
 from event.models import UserEvent, PublicHoliday, Country
 from event.serializer import UserEventSerializer, EventsOfDaySerializer, EveryDayEventsOfMonthSerializer, \
     PublicHolidaySerializer
+from event.service import send
 
 
 class PaginatorAllEvents(pagination.LimitOffsetPagination):
@@ -115,3 +117,10 @@ class PublicHolidayAPIView(APIView):
         events_of_month = PublicHoliday.objects.filter(country_id=country_id, start_date__year=year, start_date__month=month)
         serializer = PublicHolidaySerializer(events_of_month, many=True)
         return Response(serializer.data)
+
+
+class SendEmail(APIView):
+
+    def get(self, request):
+        send('katrin.z.94@mail.ru')
+        return Response()
