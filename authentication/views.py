@@ -23,7 +23,7 @@ class UserActivationView(APIView):
 
 
 class UserCreateAPIView(CreateAPIView):
-    """"Регистрация + создание профиля + отправка email"""
+    """"Регистрация/создание профиля + отправка email"""
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
