@@ -13,6 +13,7 @@ from event.models import UserEvent, PublicHoliday, Country
 from event.serializer import UserEventSerializer, EventsOfDaySerializer, EveryDayEventsOfMonthSerializer, \
     PublicHolidaySerializer
 from event.service import send
+from event.tasks import send_reminder_email
 
 
 class PaginatorAllEvents(pagination.LimitOffsetPagination):
@@ -25,6 +26,19 @@ class UserEventCreateAPIView(CreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = UserEvent.objects.all()
     serializer_class = UserEventSerializer
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        reminder_before = request.data.get('reminder_before')
+        start_date = request.data['start_date']
+        user_email = request.user.email
+        if reminder_before is not None:
+            start_date = datetime.strptime(start_date, '%Y-%m-%dT%H:%M:%SZ')
+            date_to_reminder = start_date - timedelta(hours=reminder_before)
+            send_reminder_email.apply_async(args=(user_email,), eta=date_to_reminder)
+        return response
+
+
     # filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     # search_fields = ('name',)
     # ordering_fields = ['start_date', ]
@@ -120,7 +134,16 @@ class PublicHolidayAPIView(APIView):
 
 
 class SendEmail(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        send('katrin.z.94@mail.ru')
+        email = request.user.email
+        send(email)
         return Response()
+
+
+# class CeleryPublicHoliday():
+#     def choose_the_country(self):
+#         countries = Country.objects.all()
+#         for country in countries:
+#             url ="pars_event/"+
