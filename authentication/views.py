@@ -9,6 +9,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 import requests
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import get_user_model
+from django.contrib.auth.backends import ModelBackend
 
 class UserActivationView(APIView):
     """Активация юзера по ссылке"""
@@ -49,3 +51,16 @@ class UserProfileUpdateAPIView(RetrieveUpdateAPIView):
         profile_id = self.request.user.profile.id
         return get_object_or_404(UserProfile, id=profile_id)
 
+
+class EmailBackend(ModelBackend):
+    """Логин через email"""
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        UserModel = get_user_model()
+        try:
+            user = UserModel.objects.get(email=username)
+        except UserModel.DoesNotExist:
+            return None
+        else:
+            if user.check_password(password):
+                return user
+        return None

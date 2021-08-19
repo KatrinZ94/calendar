@@ -140,6 +140,8 @@ REST_FRAMEWORK = {
     )
 }
 
+AUTHENTICATION_BACKENDS = ['authentication.views.EmailBackend']
+
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
@@ -198,7 +200,7 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-CELERY_TIMEZONE = 'UTC'
+CELERY_TIMEZONE = 'Europe/Minsk'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 

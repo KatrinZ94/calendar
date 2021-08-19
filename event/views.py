@@ -1,4 +1,6 @@
+import pytz
 from django.contrib.auth.models import User
+from django.utils.timezone import make_aware
 from rest_framework import status, filters, pagination
 
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView, get_object_or_404
@@ -8,7 +10,7 @@ from rest_framework.views import APIView
 from ics import Calendar
 import calendar
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from event.models import UserEvent, PublicHoliday, Country
 from event.serializer import UserEventSerializer, EventsOfDaySerializer, EveryDayEventsOfMonthSerializer, \
     PublicHolidaySerializer
@@ -33,9 +35,10 @@ class UserEventCreateAPIView(CreateAPIView):
         start_date = request.data['start_date']
         user_email = request.user.email
         if reminder_before is not None:
-            start_date = datetime.strptime(start_date, '%Y-%m-%dT%H:%M:%SZ')
+            start_date = datetime.fromisoformat(start_date)
             date_to_reminder = start_date - timedelta(hours=reminder_before)
-            send_reminder_email.apply_async(args=(user_email,), eta=date_to_reminder)
+            event_name = request.data['name']
+            send_reminder_email.apply_async(args=(user_email, event_name, start_date), eta=date_to_reminder)
         return response
 
 
@@ -85,7 +88,7 @@ class EventDate:
 
 
 class EveryDayEventsOfMonth(APIView):
-    """"Вывод всех событий потзователя по дням за определенный месяц года"""
+    """"Вывод всех событий потзователя по дням за определенный месяц года (агрегация)"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, month, year):
@@ -103,24 +106,24 @@ class EveryDayEventsOfMonth(APIView):
 
 
 # ГОСУДАРСТВЕННЫЕ ПРАЗДНИКИ
-class GetEventsFromICS(APIView):
-    """Извлечение государственных праздников из файла формата ics и сохранение в базу"""
-
-    def post(self, request, *args, **kwargs):
-        country_from_request = request.META.get('HTTP_COUNTRY_NAME')
-        country_id_on_deleted = Country.objects.get(name=country_from_request).id
-        PublicHoliday.objects.filter(country_id=country_id_on_deleted).delete()
-
-        url = "https://www.officeholidays.com/ics/ics_country.php?tbl_country="+country_from_request
-        all_publish_event = Calendar(requests.get(url).text)
-        for event in all_publish_event.events:
-            publish_event = PublicHoliday()
-            publish_event.country = Country.objects.get(name=country_from_request)
-            publish_event.name = event.name
-            publish_event.start_date = event._begin.datetime
-            publish_event.end_date = event._end_time.datetime
-            publish_event.save()
-        return Response(status=status.HTTP_201_CREATED)
+# class GetEventsFromICS(APIView):
+#     """Извлечение государственных праздников из файла формата ics и сохранение в базу"""
+#
+#     def post(self, request, *args, **kwargs):
+#         country_from_request = request.META.get('HTTP_COUNTRY_NAME')
+#         country_id_on_deleted = Country.objects.get(name=country_from_request).id
+#         PublicHoliday.objects.filter(country_id=country_id_on_deleted).delete()
+#
+#         url = "https://www.officeholidays.com/ics/ics_country.php?tbl_country="+country_from_request
+#         all_publish_event = Calendar(requests.get(url).text)
+#         for event in all_publish_event.events:
+#             publish_event = PublicHoliday()
+#             publish_event.country = Country.objects.get(name=country_from_request)
+#             publish_event.name = event.name
+#             publish_event.start_date = event._begin.datetime
+#             publish_event.end_date = event._end_time.datetime
+#             publish_event.save()
+#         return Response(status=status.HTTP_201_CREATED)
 
 
 class PublicHolidayAPIView(APIView):
