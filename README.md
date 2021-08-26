@@ -5,13 +5,6 @@
 * scheduling custom events
 * tracking public holidays
 
-
-## Get Started (requirements: Docker)
-
-* copy project from GitHub
-* run cmd from root folder (folder with files Dockerfile and docker-compose.yml)
-* enter command: doker-compose up
-
 ## EndPoints
 
 ### 1. Registration and creating a profile:
