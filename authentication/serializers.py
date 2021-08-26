@@ -1,7 +1,7 @@
 from djoser import signals
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import UniqueValidator
 
 from authentication.models import UserProfile
 from djoser.conf import settings

@@ -1,7 +1,7 @@
 from djoser import signals
 from djoser.compat import get_user_email
 from djoser.conf import settings
-from rest_framework.generics import CreateAPIView, UpdateAPIView, RetrieveUpdateAPIView, get_object_or_404
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, get_object_or_404
 from django.contrib.auth.models import User
 from authentication.models import UserProfile
 from authentication.serializers import UserSerializer, ProfileSerializer
@@ -11,6 +11,7 @@ import requests
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
+
 
 class UserActivationView(APIView):
     """Активация юзера по ссылке"""

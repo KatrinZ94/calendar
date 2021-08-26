@@ -8,8 +8,6 @@ urlpatterns = [
     path("all_events/", views.AllUserEventAPIView.as_view(), name="all_events"),
     path("events_of_day/<int:day>/<int:month>/<int:year>", views.EventsOfDay.as_view(), name="events_of_day"),
     path("events_of_month/<int:month>/<int:year>", views.EveryDayEventsOfMonth.as_view(), name="events_of_month"),
-    # path("pars_event/", views.GetEventsFromICS.as_view(), name="pars_event"),
     path("public_holiday/<int:month>/<int:year>", views.PublicHolidayAPIView.as_view(), name="public_holiday"),
-    path("send_email/", views.SendEmail.as_view(), name='send_email'),
 
 ]

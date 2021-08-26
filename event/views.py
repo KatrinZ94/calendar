@@ -1,20 +1,15 @@
-import pytz
-from django.contrib.auth.models import User
-from django.utils.timezone import make_aware
-from rest_framework import status, filters, pagination
-
+from celery.worker.control import revoke
+from rest_framework import pagination
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveUpdateDestroyAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ics import Calendar
 import calendar
-import requests
-from datetime import datetime, timedelta, timezone
-from event.models import UserEvent, PublicHoliday, Country
+from datetime import datetime, timedelta
+from daily.celery import app
+from event.models import UserEvent, PublicHoliday, Task
 from event.serializer import UserEventSerializer, EventsOfDaySerializer, EveryDayEventsOfMonthSerializer, \
     PublicHolidaySerializer
-from event.service import send
 from event.tasks import send_reminder_email
 
 
@@ -34,18 +29,14 @@ class UserEventCreateAPIView(CreateAPIView):
         reminder_before = request.data.get('reminder_before')
         start_date = request.data['start_date']
         user_email = request.user.email
+        event_name = request.data['name']
         if reminder_before is not None:
-            start_date = datetime.fromisoformat(start_date)
-            date_to_reminder = start_date - timedelta(hours=reminder_before)
-            event_name = request.data['name']
-            send_reminder_email.apply_async(args=(user_email, event_name, start_date), eta=date_to_reminder)
+            start_date_in_UTC = datetime.fromisoformat(start_date)
+            date_to_reminder = start_date_in_UTC - timedelta(hours=reminder_before)
+            event_id = response.data['id']
+            task = Task.objects.create(event_id=event_id)
+            send_reminder_email.apply_async(args=(user_email, event_id, start_date, event_name), task_id=str(task.id), eta=date_to_reminder)
         return response
-
-
-    # filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    # search_fields = ('name',)
-    # ordering_fields = ['start_date', ]
-    # pagination_class = PaginatorAllEvents
 
 
 class UserEventEditingAPIView(RetrieveUpdateDestroyAPIView):
@@ -57,6 +48,30 @@ class UserEventEditingAPIView(RetrieveUpdateDestroyAPIView):
         event_id = self.kwargs.get('id_event')
         user_id = self.request.user.id
         return get_object_or_404(UserEvent, id=event_id, user_id=user_id)
+
+    def perform_update(self, serializer):
+        serializer.save()
+        reminder_before = self.request.data.get('reminder_before')
+        start_date = self.request.data['start_date']
+        event_name = self.request.data['name']
+        user_email = self.request.user.email
+        event_id = self.kwargs['id_event']
+        task = Task.objects.filter(event_id=event_id).first()
+        if task is not None:
+            app.control.revoke(str(task.id), terminate=True)
+            task.delete()
+        if reminder_before is not None:
+            start_date_in_UTC = datetime.fromisoformat(start_date)
+            date_to_reminder = start_date_in_UTC - timedelta(hours=reminder_before)
+            task = Task.objects.create(event_id=event_id)
+            send_reminder_email.apply_async(args=(user_email, event_id, start_date, event_name), task_id=str(task.id),
+                                            eta=date_to_reminder, state='RECEIVED')
+
+    def perform_destroy(self, instance):
+        event_id = self.kwargs['id_event']
+        task = Task.objects.get(event_id=event_id)
+        app.control.revoke(str(task.id), terminate=True)
+        instance.delete()
 
 
 class AllUserEventAPIView(ListAPIView):
@@ -106,27 +121,9 @@ class EveryDayEventsOfMonth(APIView):
 
 
 # ГОСУДАРСТВЕННЫЕ ПРАЗДНИКИ
-# class GetEventsFromICS(APIView):
-#     """Извлечение государственных праздников из файла формата ics и сохранение в базу"""
-#
-#     def post(self, request, *args, **kwargs):
-#         country_from_request = request.META.get('HTTP_COUNTRY_NAME')
-#         country_id_on_deleted = Country.objects.get(name=country_from_request).id
-#         PublicHoliday.objects.filter(country_id=country_id_on_deleted).delete()
-#
-#         url = "https://www.officeholidays.com/ics/ics_country.php?tbl_country="+country_from_request
-#         all_publish_event = Calendar(requests.get(url).text)
-#         for event in all_publish_event.events:
-#             publish_event = PublicHoliday()
-#             publish_event.country = Country.objects.get(name=country_from_request)
-#             publish_event.name = event.name
-#             publish_event.start_date = event._begin.datetime
-#             publish_event.end_date = event._end_time.datetime
-#             publish_event.save()
-#         return Response(status=status.HTTP_201_CREATED)
-
 
 class PublicHolidayAPIView(APIView):
+    """Государственные праздники за выбранный месяц"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, month, year):
@@ -135,18 +132,3 @@ class PublicHolidayAPIView(APIView):
         serializer = PublicHolidaySerializer(events_of_month, many=True)
         return Response(serializer.data)
 
-
-class SendEmail(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        email = request.user.email
-        send(email)
-        return Response()
-
-
-# class CeleryPublicHoliday():
-#     def choose_the_country(self):
-#         countries = Country.objects.all()
-#         for country in countries:
-#             url ="pars_event/"+

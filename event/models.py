@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+import uuid
 
 
 class Country(models.Model):
@@ -66,9 +67,8 @@ class PublicHoliday(models.Model):
         blank=True,
         verbose_name='окончание праздника',
     )
-    # def __init__(self, name, _begin, _end_time):
-    #     self.name = name
-    #     self.start_date = _begin
-    #     self.end_date = _end_time
 
 
+class Task (models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, )
+    event = models.ForeignKey(UserEvent, on_delete=models.CASCADE)

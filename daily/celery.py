@@ -10,7 +10,7 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'update_public_holidays': {
         'task': 'event.tasks.refresh_public_holiday',
-        'schedule': crontab(minute='30', hour='19', day_of_month='18')
+        'schedule': crontab(minute='30', hour='12', day_of_month='1')
     }
 }
 
